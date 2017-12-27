@@ -1,0 +1,103 @@
+~~
+~~ Copyright (c) 2016 Maven Protocol Buffers Plugin Authors. All rights reserved.
+~~
+~~ Licensed under the Apache License, Version 2.0 (the "License");
+~~ you may not use this file except in compliance with the License.
+~~ You may obtain a copy of the License at
+~~
+~~    http://www.apache.org/licenses/LICENSE-2.0
+~~
+~~ Unless required by applicable law or agreed to in writing, software
+~~ distributed under the License is distributed on an "AS IS" BASIS,
+~~ WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+~~ See the License for the specific language governing permissions and
+~~ limitations under the License.
+~~
+
+            ------------
+            Introduction
+            ------------
+
+~~ APT Format: http://maven.apache.org/doxia/references/apt-format.html
+
+${project.name}
+
+  ${project.name} uses Protocol Buffer Compiler (<<<flatc>>>) tool to generate Java source files
+  from <<<.proto>>> (protocol buffer definition) files for the specified project.
+  For more information about the Protocol Buffer Compiler, please refer to
+  {{{https://developers.google.com/protocol-buffers/docs/reference/java-generated}Reference Guide}}.
+
+  The Plugin automatically scans all project dependencies for bundled <<<.proto>>> files,
+  and configures <<<proto_path>>> of the Protocol Buffer Compiler to use those files as imports.
+
+  The Plugin automatically attaches the source <<<.proto>>> files to the resources of the project,
+  so that they are later packaged into the final artifact and can be referenced as imports
+  from the dependent projects or modules.
+
+* Goals Overview
+
+  ${project.name} has the following goals:
+
+  * {{{./compile-mojo.html}${goalPrefix}:compile}}
+    compiles main <<<.proto>>> definitions into Java files and attaches the generated Java sources to the project.
+
+  * {{{./test-compile-mojo.html}${goalPrefix}:test-compile}}
+    compiles test <<<.proto>>> definitions into Java files and attaches the generated Java test sources to the project.
+
+  * {{{./compile-cpp-mojo.html}${goalPrefix}:compile-cpp}}
+    compiles main <<<.proto>>> definitions into C++ files and attaches the generated C++ sources to the project.
+
+  * {{{./test-compile-cpp-mojo.html}${goalPrefix}:test-compile-cpp}}
+    compiles test <<<.proto>>> definitions into C++ files and attaches the generated C++ test sources to the project.
+
+  * {{{./compile-python-mojo.html}${goalPrefix}:compile-python}}
+    compiles main <<<.proto>>> definitions into Python files and attaches the generated Python sources to the project.
+
+  * {{{./test-compile-python-mojo.html}${goalPrefix}:test-compile-python}}
+    compiles test <<<.proto>>> definitions into Python files and attaches the generated Python test sources to the project.
+
+  * {{{./compile-javanano-mojo.html}${goalPrefix}:compile-javanano}}
+    uses JavaNano generator (requires protobuf compiler version 3 or above) to
+    compile main <<<.proto>>> definitions into Java files and attaches the generated Java sources to the project.
+
+  * {{{./test-compile-javanano-mojo.html}${goalPrefix}:test-compile-javanano}}
+    uses JavaNano generator (requires protobuf compiler version 3 or above) to
+    compile test <<<.proto>>> definitions into Java files and attaches the generated Java test sources to the project.
+
+  * {{{./compile-custom-mojo.html}${goalPrefix}:compile-custom}}
+    compiles main <<<.proto>>> definitions using a custom <<<flatc>>> plugin.
+
+  * {{{./test-compile-custom-mojo.html}${goalPrefix}:test-compile-custom}}
+    compiles test <<<.proto>>> definitions using a custom <<<flatc>>> plugin.
+
+  []
+
+* Usage
+
+  General instructions on how to use ${project.name} can be found on the {{{./usage.html}usage page}}.
+  Some more specific use cases are described in the examples given below.
+
+  In case you still have questions regarding the Plugin's usage, please have a look at the {{{./faq.html}FAQ}}.
+  ~~ TODO add mailing lists / newsgroups / wiki
+
+  If you feel like the plugin is missing a feature or has a defect, you can fill a feature request or bug report in our
+  {{{./issue-tracking.html}issue tracker}}. When creating a new issue, please provide a comprehensive description of your
+  concern. Especially for fixing bugs it is crucial that the developers can reproduce your problem. For this reason,
+  entire debug logs, POMs or most preferably little demo projects attached to the issue are very much appreciated.
+
+  Of course, patches and pull requests are welcome, too. Contributors can check out the project from the
+  {{{./source-repository.html}source repository}} and will find supplementary information in the
+  {{{./contributions.html}contributor's guide}}.
+
+* Examples
+
+  To provide you with better understanding of some usages of ${project.name},
+  you can take a look into the following examples:
+
+  * {{{./examples/protobuf-toolchain.html} Using Protobuf Toolchain}}
+
+  * {{{./examples/flatc-artifact.html} Resolving Protoc Artifact From Maven Central Repo}}
+
+  * {{{./examples/flatc-plugin.html} Using Custom Protoc Plugins}}
+
+  []
