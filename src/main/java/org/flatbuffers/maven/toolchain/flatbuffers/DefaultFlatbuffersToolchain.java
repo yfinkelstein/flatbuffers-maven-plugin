@@ -31,12 +31,25 @@ import java.io.File;
 public class DefaultFlatbuffersToolchain extends DefaultToolchain implements FlatbuffersToolchain {
 
     public static final String KEY_FLATC_EXECUTABLE = "flatcExecutable";
+    public static final String KEY_REFLECTION_FBS = "reflectionFbs";
 
     protected DefaultFlatbuffersToolchain(ToolchainModel model, Logger logger) {
         super(model, "flatbuffers", logger);
     }
 
     private String flatcExecutable;
+
+    private String reflectionFbs;
+
+    @Override
+    public String getReflectionFbs() {
+        return reflectionFbs;
+    }
+
+    @Override
+    public void setReflectionFbs(String reflectionFbs) {
+        this.reflectionFbs = reflectionFbs;
+    }
 
     @Override
     public String findTool(String toolName) {

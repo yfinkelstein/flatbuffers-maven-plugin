@@ -46,32 +46,19 @@ public final class FlatcCompileJavaNanoMojo extends AbstractFlatcCompileMojo {
      */
     @Parameter(
             required = true,
-            property = "javananoOutputDirectory",
-            defaultValue = "${project.build.directory}/generated-sources/protobuf/javanano"
+            property = "schemaOutputDirectory",
+            defaultValue = "${project.build.directory}/generated-sources/protobuf/schema"
     )
-    private File outputDirectory;
-
-    /**
-     * Additional comma-separated options to be passed to the JavaNano generator.
-     * <b>Cannot</b> contain colon (<tt>:</tt>) symbols.
-     */
-    @Parameter(
-            required = false,
-            property = "javaNanoOptions"
-    )
-    private String javaNanoOptions;
+    private File schemaOutputDirectory;
 
     @Override
-    protected void addFlatcBuilderParameters(final Flatc.Builder protocBuilder) throws MojoExecutionException {
-        super.addFlatcBuilderParameters(protocBuilder);
-        if (javaNanoOptions != null) {
-            protocBuilder.setNativePluginParameter(javaNanoOptions);
-        }
-        protocBuilder.setJavaNanoOutputDirectory(getOutputDirectory());
+    protected void addFlatcBuilderParameters(final ImmutableFlatc.Builder flatcBuilder) throws MojoExecutionException {
+        super.addFlatcBuilderParameters(flatcBuilder);
+        flatcBuilder.schemaOutputDirectory(getSchemaOutputDirectory());
     }
 
     @Override
-    protected File getOutputDirectory() {
-        return outputDirectory;
+    protected File getSchemaOutputDirectory() {
+        return schemaOutputDirectory;
     }
 }

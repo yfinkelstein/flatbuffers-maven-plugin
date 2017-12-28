@@ -52,19 +52,19 @@ public final class FlatcTestCompileMojo extends AbstractFlatcTestCompileMojo {
     private File outputDirectory;
 
     @Override
-    protected void addFlatcBuilderParameters(final Flatc.Builder protocBuilder) throws MojoExecutionException {
+    protected void addFlatcBuilderParameters(final ImmutableFlatc.Builder protocBuilder) throws MojoExecutionException {
         super.addFlatcBuilderParameters(protocBuilder);
-        protocBuilder.setJavaOutputDirectory(getOutputDirectory());
-        // We need to add project output directory to the protobuf import paths,
-        // in case test protobuf definitions extend or depend on production ones
+        protocBuilder.javaOutputDirectory(getSchemaOutputDirectory());
+        // We need to add project output directory to the flatc import paths,
+        // in case test flatc definitions extend or depend on production ones
         final File buildOutputDirectory = new File(project.getBuild().getOutputDirectory());
         if (buildOutputDirectory.exists()) {
-            protocBuilder.addFBPathElement(buildOutputDirectory);
+            protocBuilder.addFbPathElements(buildOutputDirectory);
         }
     }
 
     @Override
-    protected File getOutputDirectory() {
+    protected File getSchemaOutputDirectory() {
         return outputDirectory;
     }
 }

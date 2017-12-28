@@ -1,7 +1,7 @@
 package org.flatbuffers.maven.toolchain.flatbuffers;
 
 /*
- * Copyright (c) 2016 Maven Protocol Buffers Plugin Authors. All rights reserved.
+ * Copyright (c) 2016 Maven Flatbuffers Plugin Authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -19,13 +19,18 @@ package org.flatbuffers.maven.toolchain.flatbuffers;
 import org.apache.maven.toolchain.Toolchain;
 
 /**
- * A tool chain for protobuf compiler (protoc).
+ * A tool chain for flatbuffers compiler (flatcc).
  *
- * @since 0.2.0
+ * @since 0.1.0
  */
 public interface FlatbuffersToolchain extends Toolchain {
 
     String getFlatcExecutable();
 
     void setFlatcExecutable(String flatcExecutable);
+
+
+    public String getReflectionFbs();
+
+    public void setReflectionFbs(String reflectionFbs);
 }

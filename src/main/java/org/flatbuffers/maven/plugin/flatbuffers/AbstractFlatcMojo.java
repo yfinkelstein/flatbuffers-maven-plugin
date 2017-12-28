@@ -52,7 +52,6 @@ import java.util.jar.JarFile;
 import static com.google.common.base.Preconditions.*;
 import static java.lang.Math.max;
 import static java.lang.String.format;
-import static java.util.Arrays.asList;
 import static org.codehaus.plexus.util.FileUtils.*;
 
 /**
@@ -93,7 +92,7 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
     /**
      * An optional tool chain manager.
      *
-     * @since 0.2.0
+     * @since 0.1.0
      */
     @Component
     protected ToolchainManager toolchainManager;
@@ -105,25 +104,9 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
     protected MavenProjectHelper projectHelper;
 
     /**
-     * A factory for Maven artifact definitions.
-     *
-     * @since 0.3.1
-     */
-    //@Component
-    //private ArtifactFactory artifactFactory;
-
-    /**
-     * A component that implements resolution of Maven artifacts from repositories.
-     *
-     * @since 0.3.1
-     */
-    @Component
-    private ArtifactResolver artifactResolver;
-
-    /**
      * A component that handles resolution of Maven artifacts.
      *
-     * @since 0.4.0
+     * @since 0.1.0
      */
     @Component
     private RepositorySystem repositorySystem;
@@ -131,7 +114,7 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
     /**
      * A component that handles resolution errors.
      *
-     * @since 0.4.0
+     * @since 0.1.0
      */
     @Component
     private ResolutionErrorHandler resolutionErrorHandler;
@@ -149,7 +132,7 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
     /**
      * Remote repositories for artifact resolution.
      *
-     * @since 0.3.0
+     * @since 0.1.0
      */
     @Parameter(
             required = true,
@@ -157,17 +140,6 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
             defaultValue = "${project.remoteArtifactRepositories}"
     )
     private List<ArtifactRepository> remoteRepositories;
-
-    /**
-     * A directory where native launchers for java flatc plugins will be generated.
-     *
-     * @since 0.3.0
-     */
-    @Parameter(
-            required = false,
-            defaultValue = "${project.build.directory}/flatc-plugins"
-    )
-    private File flatcPluginDirectory;
 
     /**
      * This is the path to the {@code flatc} executable.
@@ -181,6 +153,18 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
             property = "flatcExecutable"
     )
     private String flatcExecutable;
+
+    /**
+     * A local directory where flatc executable will be stored in case of remote artifact download.
+     *
+     * @since 0.1.0
+     */
+    @Parameter(
+            required = false,
+            defaultValue = "${project.build.directory}/flatc-directory"
+    )
+    private File flatcDirectory;
+
 
     /**
      * Flatbuffers compiler artifact specification, in {@code groupId:artifactId:version[:type[:classifier]]} format.
@@ -271,75 +255,29 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
     )
     protected boolean attachFbsSources;
 
+
     /**
-     * The descriptor set file name. Only used if {@code writeDescriptorSet} is set to {@code true}.
+     * If set to {@code true}, the compiler will generate a binary-encoded schema represented by {@code .fbs} files.
      *
-     * @since 0.3.0
+     * @since 0.1.0
      */
     @Parameter(
             required = true,
-            defaultValue = "${project.build.finalName}.fbbin"
+            defaultValue = "true"
     )
-    protected String descriptorSetFileName;
+    protected boolean writeBinarySchema;
 
     /**
-     * If set to {@code true}, the compiler will generate a binary descriptor set file for the
-     * specified {@code .fbs} files.
+     * If set to {@code true}, the generated binart-encoded schema will be attached as resource to the build.
      *
-     * @since 0.3.0
-     */
-    @Parameter(
-            required = true,
-            defaultValue = "false"
-    )
-    protected boolean writeDescriptorSet;
-
-    /**
-     * If set to {@code true}, the generated descriptor set will be attached to the build.
-     *
-     * @since 0.4.1
+     * @since 0.1.0
      */
     @Parameter(
             required = true,
             defaultValue = "false"
     )
-    protected boolean attachDescriptorSet;
+    protected boolean attachBinarySchema;
 
-    /**
-     * If {@code true} and {@code writeDescriptorSet} has been set, the compiler will include
-     * all dependencies in the descriptor set making it "self-contained".
-     *
-     * @since 0.3.0
-     */
-    @Parameter(
-            required = false,
-            defaultValue = "false"
-    )
-    protected boolean includeDependenciesInDescriptorSet;
-
-    /**
-     * If {@code true} and {@code writeDescriptorSet} has been set, do not strip SourceCodeInfo
-     * from the FileDescriptorProto. This results in vastly larger descriptors that include information
-     * about the original location of each decl in the source file as well as surrounding comments.
-     *
-     * @since 0.4.4
-     */
-    @Parameter(
-            required = false,
-            defaultValue = "false"
-    )
-    protected boolean includeSourceInfoInDescriptorSet;
-
-    /**
-     * Specifies one of more custom flatc plugins, written in Java
-     * and available as Maven artifacts. An executable plugin will be created
-     * at execution time. On UNIX the executable is a shell script and on
-     * Windows it is a WinRun4J .exe and .ini.
-     */
-    @Parameter(
-            required = false
-    )
-    private List<FlatcPlugin> flatcPlugins;
 
     /**
      * Sets the granularity in milliseconds of the last modification date
@@ -386,7 +324,7 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
      * Setting this parameter to {@code true} will force
      * the execution of this mojo, even if it would usually get skipped in this case.
      *
-     * @since 0.2.0
+     * @since 0.1.0
      */
     @Parameter(
             required = false,
@@ -397,11 +335,8 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
 
     /**
      * When {@code true}, the output directory will be cleared out prior to code generation.
-     * With the latest versions of flatc (2.5.0 or later) this is generally not required,
-     * although some earlier versions reportedly had issues with running
-     * two code generations in a row without clearing out the output directory in between.
      *
-     * @since 0.4.0
+     * @since 0.1.0
      */
     @Parameter(
             required = false,
@@ -424,8 +359,8 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
         if (fbsSourceRoot.exists()) {
             try {
                 final ImmutableSet<File> fbsFiles = findFbsFilesInDirectory(fbsSourceRoot);
-                final File outputDirectory = getOutputDirectory();
-                final ImmutableSet<File> outputFiles = findGeneratedFilesInDirectory(getOutputDirectory());
+                final File outputDirectory = getSchemaOutputDirectory();
+                final ImmutableSet<File> outputFiles = findGeneratedFilesInDirectory(getSchemaOutputDirectory());
 
                 if (fbsFiles.isEmpty()) {
                     getLog().info("No fbs files to compile.");
@@ -433,7 +368,7 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
                     getLog().info("Skipping compilation because build context has no changes.");
                     doAttachFiles();
                 } else if (checkStaleness && checkFilesUpToDate(fbsFiles, outputFiles)) {
-                    getLog().info("Skipping compilation because target directory newer than sources.");
+                    getLog().info("Skipping compilation because target directory is newer than sources.");
                     doAttachFiles();
                 } else {
                     final ImmutableSet<File> derivedFBPathElements =
@@ -444,16 +379,12 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
                         cleanDirectory(outputDirectory);
                     }
 
-                    if (writeDescriptorSet) {
-                        final File descriptorSetOutputDirectory = getDescriptorSetOutputDirectory();
-                        FileUtils.mkdir(descriptorSetOutputDirectory.getAbsolutePath());
+                    if (writeBinarySchema) {
+                        final File schemaOutputDirectory = getSchemaOutputDirectory();
+                        FileUtils.mkdir(schemaOutputDirectory.getAbsolutePath());
                         if (clearOutputDirectory) {
-                            cleanDirectory(descriptorSetOutputDirectory);
+                            cleanDirectory(schemaOutputDirectory);
                         }
-                    }
-
-                    if (flatcPlugins != null) {
-                        createFlatcPlugins();
                     }
 
                     //get toolchain from context
@@ -480,12 +411,12 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
                         flatcExecutable = "flatc";
                     }
 
-                    final Flatc.Builder flatcBuilder =
-                            new Flatc.Builder(flatcExecutable)
-                                    .addFBPathElement(fbsSourceRoot)
-                                    .addFBpathElements(derivedFBPathElements)
-                                    .addFBpathElements(asList(additionalFBPathElements))
-                                    .addFbsFiles(fbsFiles);
+                    ImmutableFlatc.Builder flatcBuilder = ImmutableFlatc.builder().executable(flatcExecutable)
+                            .addFbPathElements(fbsSourceRoot)
+                            .addAllFbPathElements(derivedFBPathElements)
+                            .addFbPathElements(additionalFBPathElements)
+                            .addAllFbsFiles(fbsFiles);
+
                     addFlatcBuilderParameters(flatcBuilder);
                     final Flatc flatc = flatcBuilder.build();
 
@@ -512,19 +443,19 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
                     getLog().info(format("Compiling %d fbs file(s) to %s", fbsFiles.size(), outputDirectory));
 
                     final int exitStatus = flatc.execute(getLog());
-                    if (StringUtils.isNotBlank(flatc.getOutput())) {
-                        getLog().info("FLATC: " + flatc.getOutput());
+                    if (StringUtils.isNotBlank(flatc.getStdOut())) {
+                        getLog().info("FLATC: " + flatc.getStdOut());
                     }
                     if (exitStatus != 0) {
-                        getLog().error("FLATC FAILED: " + flatc.getError());
+                        getLog().error("FLATC FAILED: " + flatc.getStdErr());
                         for (File pf : fbsFiles) {
                             buildContext.removeMessages(pf);
-                            buildContext.addMessage(pf, 0, 0, flatc.getError(), BuildContext.SEVERITY_ERROR, null);
+                            buildContext.addMessage(pf, 0, 0, flatc.getStdErr(), BuildContext.SEVERITY_ERROR, null);
                         }
                         throw new MojoFailureException(
                                 "flatc did not exit cleanly. Review output for more information.");
-                    } else if (StringUtils.isNotBlank(flatc.getError())) {
-                        getLog().warn("FLATC: " + flatc.getError());
+                    } else if (StringUtils.isNotBlank(flatc.getStdErr())) {
+                        getLog().warn("FLATC: " + flatc.getStdErr());
                     }
                     doAttachFiles();
                 }
@@ -540,42 +471,6 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
         } else {
             getLog().info(format("%s does not exist. Review the configuration or consider disabling the plugin.",
                     fbsSourceRoot));
-        }
-    }
-
-    /**
-     * Generates native launchers for java flatc plugins.
-     * These launchers will later be added as parameters for flatc compiler.
-     *
-     * @throws MojoExecutionException if plugins launchers could not be created.
-     *
-     * @since 0.3.0
-     */
-    protected void createFlatcPlugins() throws MojoExecutionException {
-        final String javaHome = detectJavaHome();
-
-        for (final FlatcPlugin plugin : flatcPlugins) {
-
-            if (plugin.getJavaHome() != null) {
-                getLog().debug("Using javaHome defined in plugin definition: " + javaHome);
-            } else {
-                getLog().debug("Setting javaHome for plugin: " + javaHome);
-                plugin.setJavaHome(javaHome);
-            }
-
-            getLog().info("Building flatc plugin: " + plugin.getId());
-            final FlatcPluginAssembler assembler = new FlatcPluginAssembler(
-                    plugin,
-                    session,
-                    project.getArtifact(),
-//                    artifactFactory,
-                    repositorySystem,
-                    resolutionErrorHandler,
-                    localRepository,
-                    remoteRepositories,
-                    flatcPluginDirectory,
-                    getLog());
-            assembler.execute();
         }
     }
 
@@ -629,22 +524,15 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
      * @param flatcBuilder the builder to be modified.
      * @throws MojoExecutionException if parameters cannot be resolved or configured.
      */
-    protected void addFlatcBuilderParameters(final Flatc.Builder flatcBuilder) throws MojoExecutionException {
-        if (flatcPlugins != null) {
-            for (final FlatcPlugin plugin : flatcPlugins) {
-                flatcBuilder.addPlugin(plugin);
-            }
-            flatcPluginDirectory.mkdirs();
-            flatcBuilder.setPluginDirectory(flatcPluginDirectory);
-        }
-        if (writeDescriptorSet) {
-            final File descriptorSetFile = new File(getDescriptorSetOutputDirectory(), descriptorSetFileName);
-            getLog().info("Will write descriptor set:");
-            getLog().info(" " + descriptorSetFile.getAbsolutePath());
-            flatcBuilder.withDescriptorSetFile(
-                    descriptorSetFile,
-                    includeDependenciesInDescriptorSet,
-                    includeSourceInfoInDescriptorSet);
+    protected void addFlatcBuilderParameters(final ImmutableFlatc.Builder flatcBuilder) throws MojoExecutionException {
+        if (writeBinarySchema) {
+//            final File descriptorSetFile = new File(getDescriptorSetOutputDirectory(), descriptorSetFileName);
+//            getLog().info("Will write descriptor set:");
+//            getLog().info(" " + descriptorSetFile.getAbsolutePath());
+//            flatcBuilder.withDescriptorSetFile(
+//                    descriptorSetFile,
+//                    includeDependenciesInDescriptorSet,
+//                    includeSourceInfoInDescriptorSet);
         }
     }
 
@@ -715,7 +603,7 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
      * @param files files to be checked for changes.
      * @return {@code true}, if at least one file has changes; {@code false}, if no files have changes.
      *
-     * @since 0.3.0
+     * @since 0.1.0
      */
     protected boolean hasDelta(final ImmutableSet<File> files) {
         for (final File file : files) {
@@ -734,7 +622,7 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
         checkArgument(!fbsSourceRoot.isFile(), "fbsSourceRoot is a file, not a directory");
         checkNotNull(temporaryFbsFileDirectory, "temporaryFbsFileDirectory");
         checkState(!temporaryFbsFileDirectory.isFile(), "temporaryFbsFileDirectory is a file, not a directory");
-        final File outputDirectory = getOutputDirectory();
+        final File outputDirectory = getSchemaOutputDirectory();
         checkNotNull(outputDirectory);
         checkState(!outputDirectory.isFile(), "the outputDirectory is a file, not a directory");
     }
@@ -759,17 +647,8 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
      *
      * @return output directory for generated sources.
      */
-    protected abstract File getOutputDirectory();
+    protected abstract File getSchemaOutputDirectory();
 
-    /**
-     * Returns output directory for descriptor set file. Depends on build phase so must
-     * be defined in concrete implementation.
-     *
-     * @return output directory for generated descriptor set.
-     *
-     * @since 0.3.0
-     */
-    protected abstract File getDescriptorSetOutputDirectory();
 
     protected void doAttachFiles() {
         if (attachFbsSources) {
@@ -925,6 +804,12 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
         return hexString.toString();
     }
 
+    /**
+     * Used to retrieve flatc binary from the artifact
+     * @param artifact
+     * @return
+     * @throws MojoExecutionException
+     */
     protected File resolveBinaryArtifact(final Artifact artifact) throws MojoExecutionException {
         final ArtifactResolutionResult result;
         try {
@@ -969,21 +854,21 @@ abstract class AbstractFlatcMojo extends AbstractMojo {
         } else {
             targetFileName = sourceFileName;
         }
-        final File targetFile = new File(flatcPluginDirectory, targetFileName);
+        final File targetFile = new File(flatcDirectory, targetFileName);
         if (targetFile.exists()) {
             // The file must have already been copied in a prior plugin execution/invocation
             getLog().debug("Executable file already exists: " + targetFile.getAbsolutePath());
             return targetFile;
         }
         try {
-            FileUtils.forceMkdir(flatcPluginDirectory);
+            FileUtils.forceMkdir(flatcDirectory);
         } catch (final IOException e) {
-            throw new MojoExecutionException("Unable to create directory " + flatcPluginDirectory, e);
+            throw new MojoExecutionException("Unable to create directory " + flatcDirectory, e);
         }
         try {
             FileUtils.copyFile(sourceFile, targetFile);
         } catch (final IOException e) {
-            throw new MojoExecutionException("Unable to copy the file to " + flatcPluginDirectory, e);
+            throw new MojoExecutionException("Unable to copy the file to " + flatcDirectory, e);
         }
         if (!Os.isFamily(Os.FAMILY_WINDOWS)) {
             targetFile.setExecutable(true);

@@ -68,11 +68,11 @@ public abstract class AbstractFlatcCompileMojo extends AbstractFlatcMojo {
 
     @Override
     protected void doAttachGeneratedFiles() {
-        final File outputDirectory = getOutputDirectory();
+        final File outputDirectory = getSchemaOutputDirectory();
         project.addCompileSourceRoot(outputDirectory.getAbsolutePath());
-        if (writeDescriptorSet) {
-            final File descriptorSetFile = new File(getDescriptorSetOutputDirectory(), descriptorSetFileName);
-            projectHelper.attachArtifact(project, "fbbin", descriptorSetClassifier, descriptorSetFile);
+        if (writeBinarySchema) {
+//            final File descriptorSetFile = new File(getDescriptorSetOutputDirectory(), descriptorSetFileName);
+//            projectHelper.attachArtifact(project, "fbbin", descriptorSetClassifier, descriptorSetFile);
         }
         buildContext.refresh(outputDirectory);
     }
@@ -80,11 +80,6 @@ public abstract class AbstractFlatcCompileMojo extends AbstractFlatcMojo {
     @Override
     protected List<Artifact> getDependencyArtifacts() {
         return project.getCompileArtifacts();
-    }
-
-    @Override
-    protected File getDescriptorSetOutputDirectory() {
-        return descriptorSetOutputDirectory;
     }
 
     @Override

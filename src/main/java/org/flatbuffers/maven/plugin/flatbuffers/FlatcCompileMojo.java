@@ -1,7 +1,7 @@
 package org.flatbuffers.maven.plugin.flatbuffers;
 
 /*
- * Copyright (c) 2016 Maven Protocol Buffers Plugin Authors. All rights reserved.
+ * Copyright (c) 2016 Maven Flatbuffers Plugin Authors. All rights reserved.
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -25,10 +25,10 @@ import org.apache.maven.plugins.annotations.ResolutionScope;
 import java.io.File;
 
 /**
- * This mojo executes the {@code protoc} compiler for generating main Java sources
- * from protocol buffer definitions. It also searches dependency artifacts for
- * {@code .proto} files and includes them in the {@code proto_path} so that they can be
- * referenced. Finally, it adds the {@code .proto} files to the project as resources so
+ * This mojo executes the {@code flatc} compiler for generating main Java sources
+ * from flatbuffers definitions. It also searches dependency artifacts for
+ * {@code .fbs} files and includes them in the {@code fbpath} so that they can be
+ * referenced. Finally, it adds the {@code .fbs} files to the project as resources so
  * that they are included in the final artifact.
  */
 @Mojo(
@@ -50,13 +50,13 @@ public final class FlatcCompileMojo extends AbstractFlatcCompileMojo {
     private File outputDirectory;
 
     @Override
-    protected void addFlatcBuilderParameters(final Flatc.Builder protocBuilder) throws MojoExecutionException {
-        super.addFlatcBuilderParameters(protocBuilder);
-        protocBuilder.setJavaOutputDirectory(getOutputDirectory());
+    protected void addFlatcBuilderParameters(final ImmutableFlatc.Builder flatcBuilder) throws MojoExecutionException {
+        super.addFlatcBuilderParameters(flatcBuilder);
+        flatcBuilder.javaOutputDirectory(getSchemaOutputDirectory());
     }
 
     @Override
-    protected File getOutputDirectory() {
+    protected File getSchemaOutputDirectory() {
         return outputDirectory;
     }
 }

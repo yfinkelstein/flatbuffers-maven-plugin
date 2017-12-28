@@ -69,11 +69,11 @@ public abstract class AbstractFlatcTestCompileMojo extends AbstractFlatcMojo {
 
     @Override
     protected void doAttachGeneratedFiles() {
-        final File outputDirectory = getOutputDirectory();
+        final File outputDirectory = getSchemaOutputDirectory();
         project.addTestCompileSourceRoot(outputDirectory.getAbsolutePath());
-        if (writeDescriptorSet) {
-            final File descriptorSetFile = new File(getDescriptorSetOutputDirectory(), descriptorSetFileName);
-            projectHelper.attachArtifact(project, "test-fbbin", descriptorSetClassifier, descriptorSetFile);
+        if (writeBinarySchema) {
+//            final File descriptorSetFile = new File(getDescriptorSetOutputDirectory(), descriptorSetFileName);
+//            projectHelper.attachArtifact(project, "test-fbbin", descriptorSetClassifier, descriptorSetFile);
         }
         buildContext.refresh(outputDirectory);
     }
@@ -81,11 +81,6 @@ public abstract class AbstractFlatcTestCompileMojo extends AbstractFlatcMojo {
     @Override
     protected List<Artifact> getDependencyArtifacts() {
         return project.getTestArtifacts();
-    }
-
-    @Override
-    protected File getDescriptorSetOutputDirectory() {
-        return descriptorSetOutputDirectory;
     }
 
     @Override
